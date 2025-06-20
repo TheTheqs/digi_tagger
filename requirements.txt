@@ -1,0 +1,3 @@
+PySide6>=6.6.0   # Interface gráfica completa (Qt)
+Pillow>=10.0.0   # Manipulação básica de imagem (abrir sprites, carregar no QPixmap)
+SQLAlchemy>=2.0.0  # ORM para o banco de dados

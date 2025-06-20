@@ -1,0 +1,26 @@
+# Bytecode e caches do Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Configurações locais de IDE (ex: PyCharm, VSCode etc)
+.idea/
+.vscode/
+
+# Arquivos temporários e de sistema
+.DS_Store
+Thumbs.db
+
+# Logs (se algum dia gerarmos)
+*.log
+
+# Arquivos de testes automáticos temporários
+*.pytest_cache/
+
+# Arquivos temporários gerais
+*.swp
+*.swo
+
+# Excluir eventuais backups ou arquivos temporários do sqlite
+*.sqlite3-journal
+*.db-journal
