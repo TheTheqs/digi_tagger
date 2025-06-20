@@ -58,3 +58,26 @@ class DbService:
             tag_service = TagService(tag_repo)
             tag_service.delete(tag)
             session.commit()
+
+    def get_tag_type_with_tags(self, tag_type_id: int) -> tuple[str, list[str]]:
+        with self.session_factory() as session:
+            # Repositórios
+            tag_type_repo = TagTypeRepository(session)
+            tag_repo = TagRepository(session)
+
+            # Services
+            tag_type_service = TagTypeService(tag_type_repo)
+            tag_service = TagService(tag_repo)
+
+            # Busca os dados
+            tag_type_name = tag_type_service.get_tag_type_name(tag_type_id)
+            tags = tag_service.get_by_tag_type_id(tag_type_id)
+            tag_names = [tag.name for tag in tags]
+
+            return tag_type_name, tag_names
+
+    def get_all_tag_type_ids(self) -> list[int]:
+        with self.session_factory() as session:
+            tag_type_repo = TagTypeRepository(session)
+            tag_type_service = TagTypeService(tag_type_repo)
+            return tag_type_service.get_all_ids()
