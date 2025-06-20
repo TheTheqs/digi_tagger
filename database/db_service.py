@@ -70,11 +70,11 @@ class DbService:
             tag_service = TagService(tag_repo)
 
             # Busca os dados
-            tag_type_name = tag_type_service.get_tag_type_name(tag_type_id)
+            tag_type = tag_type_service.get_tag_type_name(tag_type_id)
             tags = tag_service.get_by_tag_type_id(tag_type_id)
             tag_names = [tag.name for tag in tags]
 
-            return tag_type_name, tag_names
+            return tag_type, tag_names
 
     def get_all_tag_type_ids(self) -> list[int]:
         with self.session_factory() as session:

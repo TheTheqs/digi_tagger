@@ -11,7 +11,7 @@ class TagTypeRepository:
         self.session.delete(tag_type)
 
     def get_tag_type_name(self, tag_type_id: int) -> str:
-        tag_type = self.session.query(TagType).filter(TagType.id == tag_type_id).first()
+        tag_type: TagType = self.session.query(TagType).filter(TagType.id == tag_type_id).first()
         if not tag_type:
             raise ValueError("TagType não encontrado.")
         return tag_type.name
