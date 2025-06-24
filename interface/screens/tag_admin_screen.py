@@ -1,3 +1,4 @@
+# interface/screens/tag_admin_screen.py
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from interface.components.title import Title
 from interface.components.custom_button import CustomButton
@@ -50,7 +51,14 @@ class TagAdminScreen(QWidget):
 
         for tag_type_id in tag_type_ids:
             tag_type_name, tag_names = self.app_service.db.get_tag_type_with_tags(tag_type_id)
-            layer = TagTypeLayer(tag_type_id, tag_type_name, tag_names, self.on_add_tag)
+            layer = TagTypeLayer(
+                tag_type_id,
+                tag_type_name,
+                tag_names,
+                self.on_add_tag,
+                self.on_request_delete_tag_type,
+                self.on_request_delete_tag
+            )
             self.tag_type_list.add_tag_type_layer(layer)
 
     def on_add_tag(self, tag_type_id: int, tag_type_name: str):
@@ -60,3 +68,18 @@ class TagAdminScreen(QWidget):
 
         popup = CreateTagPopup(on_save)
         popup.exec()
+
+    def on_request_delete_tag_type(self, tag_type_id: int):
+        try:
+            self.app_service.db.delete_tag_type(tag_type_id)
+            self.load_tag_types()
+        except Exception as e:
+            print(f"Erro ao deletar TagType: {e}")
+
+    def on_request_delete_tag(self, tag_name: str, tag_type_id: int):
+        try:
+            tag_id = self.app_service.db.get_tag_id_by_name(tag_name, tag_type_id)
+            self.app_service.db.delete_tag(tag_id)
+            self.load_tag_types()
+        except Exception as e:
+            print(f"Erro ao deletar Tag: {e}")

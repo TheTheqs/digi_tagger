@@ -1,3 +1,4 @@
+# database/repositories/tag_type_repository.py
 from database.models.tag_type import TagType
 
 class TagTypeRepository:

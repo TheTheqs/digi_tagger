@@ -16,3 +16,6 @@ class TagService:
 
     def get_by_tag_type_id(self, tag_type_id: int) -> list[Tag]:
         return self.repository.get_by_tag_type_id(tag_type_id)
+
+    def get_by_name_and_type(self, tag_name, tag_type: int) -> Tag|None:
+        return self.repository.get_by_name_and_type(tag_name, tag_type)

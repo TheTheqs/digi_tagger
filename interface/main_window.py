@@ -1,6 +1,9 @@
 from PySide6.QtWidgets import QMainWindow, QStackedWidget
+
+from interface.screens.data_screen import DataScreen
 from interface.screens.home_screen import HomeScreen
 from interface.screens.tag_admin_screen import TagAdminScreen
+from interface.screens.update_screen import UpdateDatabaseScreen
 from services.application_services import ApplicationService
 
 
@@ -17,9 +20,13 @@ class MainWindow(QMainWindow):
         #Screens
         self.home_screen = HomeScreen(self.navigate)
         self.tag_admin_screen = TagAdminScreen(self.navigate, app_service)
+        self.data_screen = DataScreen(self.navigate, app_service)
+        self.update_screen = UpdateDatabaseScreen(self.navigate, self.app_service)
 
         self.stack.addWidget(self.home_screen)
         self.stack.addWidget(self.tag_admin_screen)
+        self.stack.addWidget(self.data_screen)
+        self.stack.addWidget(self.update_screen)
 
         # Home Screen
         self.stack.setCurrentWidget(self.home_screen)
@@ -28,9 +35,11 @@ class MainWindow(QMainWindow):
         if destiny == "home":
             self.stack.setCurrentWidget(self.home_screen)
         elif destiny == "update":
-            print("Entrando em update...")
-        elif destiny == "analyse":
-            print("Entrando em analyse...")
+            self.update_screen.start_update("/home/paulo/matheqs/downloads/sprites/raw")
+            self.stack.setCurrentWidget(self.update_screen)
+        elif destiny == "data":
+            self.data_screen.update_screen()
+            self.stack.setCurrentWidget(self.data_screen)
         elif destiny == "edit":
             print("Entrando em edit...")
         elif destiny == "tags":

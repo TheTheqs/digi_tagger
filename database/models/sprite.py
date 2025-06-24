@@ -1,3 +1,5 @@
+# database/models/sprite.py
+
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
