@@ -1,5 +1,5 @@
 # database/services/sprite_service.py
-
+from database.models.configuration import Configuration
 from database.repositories.sprite_repository import SpriteRepository
 from database.models.sprite import Sprite
 
@@ -19,3 +19,12 @@ class SpriteService:
 
     def get_complete_data(self) -> tuple[int, int, int]:
         return self.sprite_repository.get_complete_data()
+
+    def get_by_id(self, sprite_id: int) -> Sprite|None:
+        return self.sprite_repository.get_by_id(sprite_id)
+
+    def update_sprite_with_configuration(self, sprite: Sprite, configuration: Configuration):
+        self.sprite_repository.update_sprite_with_configuration(sprite, configuration)
+
+    def get_all_edited_id(self) -> list[int]:
+        return self.sprite_repository.get_all_edited_ids()

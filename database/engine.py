@@ -17,7 +17,7 @@ from database.models.configuration_tags import configuration_tags
 os.makedirs("data", exist_ok=True)
 
 # Definindo o caminho do banco
-DATABASE_URL = "sqlite:///data/eyeing.db"
+DATABASE_URL = "sqlite:///data/digi_tagger.db"
 
 # Criando a engine
 engine = create_engine(DATABASE_URL, echo=False)

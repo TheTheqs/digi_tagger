@@ -38,8 +38,8 @@ class TagAdminScreen(QWidget):
         self.load_tag_types()
 
     def create_tag_type(self):
-        def on_save(name, exclusive):
-            self.app_service.db.create_tag_type(name, exclusive)
+        def on_save(name):
+            self.app_service.db.create_tag_type(name)
             self.load_tag_types()
 
         popup = CreateTagTypePopup(on_save)

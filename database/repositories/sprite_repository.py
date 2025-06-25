@@ -3,6 +3,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from database.models.sprite import Sprite
+from database.models.configuration import Configuration
+from sqlalchemy.orm import joinedload
 
 class SpriteRepository:
     def __init__(self, session: Session):
@@ -11,7 +13,7 @@ class SpriteRepository:
     def create_sprite(self, path: str) -> Sprite:
         sprite = Sprite(path=path)
         self.session.add(sprite)
-        return sprite  # (não comita, como de costume)
+        return sprite
 
     def exist_by_path(self, path: str) -> bool:
         exists = self.session.query(Sprite).filter(Sprite.path == path).first()
@@ -26,3 +28,14 @@ class SpriteRepository:
         edited = self.session.query(func.count(Sprite.id)).filter(Sprite.edited == True).scalar()
         unedited = self.session.query(func.count(Sprite.id)).filter(Sprite.edited == False).scalar()
         return total, edited, unedited
+
+    def get_by_id(self, sprite_id: int) -> Sprite | None:
+        return self.session.query(Sprite).filter(Sprite.id == sprite_id).first()
+
+    def update_sprite_with_configuration(self, sprite: Sprite, configuration: Configuration):
+        sprite.configuration = configuration
+        sprite.edited = True
+
+    def get_all_edited_ids(self) -> list[int]:
+        result = self.session.query(Sprite.id).filter(Sprite.edited == True).all()
+        return [r[0] for r in result]

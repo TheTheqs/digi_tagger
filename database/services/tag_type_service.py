@@ -5,8 +5,8 @@ class TagTypeService:
     def __init__(self, repository: TagTypeRepository):
         self.repository = repository
 
-    def create(self, name: str, exclusive: bool):
-        tag_type = TagType(name=name, exclusive=exclusive)
+    def create(self, name: str):
+        tag_type = TagType(name=name)
         self.repository.create(tag_type)
         return tag_type
 

@@ -8,17 +8,20 @@ from database.repositories.sprite_repository import SpriteRepository
 from database.services.tag_type_service import TagTypeService
 from database.services.tag_service import TagService
 from database.services.sprite_service import SpriteService
+from database.repositories.configuration_repository import ConfigurationRepository
+from database.services.configuration_service import ConfigurationService
+import os
 
 class DbService:
     def __init__(self):
         self.session_factory = SessionLocal
 
-    def create_tag_type(self, name: str, exclusive: bool) -> TagType:
+    def create_tag_type(self, name: str) -> TagType:
         with self.session_factory() as session:
             tag_type_repo = TagTypeRepository(session)
             tag_type_service = TagTypeService(tag_type_repo)
 
-            tag_type = tag_type_service.create(name, exclusive)
+            tag_type = tag_type_service.create(name)
             session.commit()
             return tag_type
 
@@ -109,3 +112,61 @@ class DbService:
             sprite_repo = SpriteRepository(session)
             sprite_service = SpriteService(sprite_repo)
             return sprite_service.get_complete_data()
+
+    def save_configuration_for_sprite(self, sprite_id: int, tag_ids: list[int]):
+        with self.session_factory() as session:
+            # Repositories
+            sprite_repo = SpriteRepository(session)
+            config_repo = ConfigurationRepository(session)
+            tag_repo = TagRepository(session)
+
+            # Services
+            sprite_service = SpriteService(sprite_repo)
+            config_service = ConfigurationService(config_repo, tag_repo)
+
+            # Busca o Sprite
+            sprite = sprite_service.get_by_id(sprite_id)
+            if not sprite:
+                raise ValueError(f"Sprite com ID {sprite_id} não encontrado.")
+
+            # Pega o file_name a partir do path do sprite
+            file_name = os.path.basename(sprite.path)
+
+            # Cria o Configuration com as tags
+            configuration = config_service.create_configuration(file_name, tag_ids)
+
+            # Atualiza o Sprite associando o Configuration e marcando como editado
+            sprite_service.update_sprite_with_configuration(sprite, configuration)
+
+            # Commit final da transação
+            session.commit()
+
+    def get_all_edited_sprite_ids(self) -> list[int]:
+        with self.session_factory() as session:
+            sprite_repo = SpriteRepository(session)
+            sprite_service = SpriteService(sprite_repo)
+            return sprite_service.get_all_edited_id()
+
+    def get_sprite_by_id(self, sprite_id: int) -> Sprite|None:
+        with self.session_factory() as session:
+            sprite_repo = SpriteRepository(session)
+            sprite_service = SpriteService(sprite_repo)
+            return sprite_service.get_by_id(sprite_id)
+
+    def get_configuration_data_for_review(self, sprite_id: int) -> list[tuple[str, str]]:
+        with self.session_factory() as session:
+            configuration_repo = ConfigurationRepository(session)
+            tag_repo = TagRepository(session)
+            configuration_service = ConfigurationService(configuration_repo, tag_repo)
+            configuration = configuration_service.get_by_sprite_id(sprite_id)
+            if not configuration:
+                return []
+
+            tag_data = []
+            for tag in configuration.tags:
+                # Como estamos ainda na sessão aberta aqui, podemos acessar os relacionamentos
+                tag_type_name = tag.tag_type.name
+                tag_name = tag.name
+                tag_data.append((tag_type_name, tag_name))
+
+            return tag_data

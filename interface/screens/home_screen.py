@@ -22,6 +22,8 @@ class HomeScreen(QWidget):
         layout.addWidget(btn_analyse)
         btn_edit = CustomButton("🖼️ Classificar Próximo Sprite", lambda: self.navi("edit"))
         layout.addWidget(btn_edit)
+        btn_review = CustomButton("🔍🗂️ Revisar Dataset", lambda: self.navi("review"))
+        layout.addWidget(btn_review)
         btn_tags = CustomButton("🏷️️ Admistrar Tags", lambda: self.navi("tags"))
         layout.addWidget(btn_tags)
 

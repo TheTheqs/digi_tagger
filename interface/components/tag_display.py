@@ -20,10 +20,14 @@ class TagDisplay(QWidget):
         self.dropdown = Dropdown(tag_names)
         layout.addWidget(self.dropdown)
 
-        self.add_button = ToolButton("+", "Adicionar novo Tag", self._on_add_tag)
+        self.add_button = ToolButton("+", "Adicionar nova Tag", self._on_add_tag)
         layout.addWidget(self.add_button)
 
         self.setLayout(layout)
 
     def _on_add_tag(self):
         self.on_add_tag_callback(self.tag_type_id, self.tag_type_name)
+
+    def update_tags(self, tag_names: list[str]):
+        self.dropdown.clear()
+        self.dropdown.addItems(tag_names)
