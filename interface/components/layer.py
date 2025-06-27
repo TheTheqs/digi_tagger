@@ -1,46 +1,45 @@
-from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem
-from PySide6.QtGui import QPixmap, QWheelEvent, QPainter
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSizePolicy
+from PySide6.QtGui import QPixmap, QPainter, QPen, QColor
+from PySide6.QtCore import Qt, QRectF
 
 
 class Layer(QGraphicsView):
     def __init__(self):
         super().__init__()
+
         self._scene = QGraphicsScene(self)
         self.setScene(self._scene)
-
         self._image_item = None
-        self._zoom = 1.0
-        self._zoom_step = 0.1
-        self._min_zoom = 0.2
-        self._max_zoom = 3.0
 
+        # Renderização de qualidade
         self.setRenderHints(self.renderHints() |
                             QPainter.RenderHint.Antialiasing |
                             QPainter.RenderHint.SmoothPixmapTransform)
-        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+
+        # Sem rolagem ou zoom
+        self.setDragMode(QGraphicsView.DragMode.NoDrag)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Expansível no layout
+        self.setMinimumSize(320, 320)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
     def set_image(self, image_path: str):
         self._scene.clear()
         pixmap = QPixmap(image_path)
+
         if not pixmap.isNull():
+            # Adiciona imagem
             self._image_item = QGraphicsPixmapItem(pixmap)
             self._scene.addItem(self._image_item)
-            self._zoom = 1.0
-            self.resetTransform()
-            self.centerOn(self._image_item)
 
-    def wheelEvent(self, event: QWheelEvent):
-        delta = event.angleDelta().y()
-        if delta > 0 and self._zoom < self._max_zoom:
-            self._zoom += self._zoom_step
-        elif delta < 0 and self._zoom > self._min_zoom:
-            self._zoom -= self._zoom_step
-        else:
-            return
+            # Adiciona borda
+            rect = QRectF(pixmap.rect())
+            pen = QPen(QColor("gray"))
+            pen.setWidth(2)
+            self._scene.addRect(rect, pen)
 
-        self.resetTransform()
-        self.scale(self._zoom, self._zoom)
-        if self._image_item:
+            # Ajusta a cena e encaixa imagem na view
+            self._scene.setSceneRect(rect)
+            self.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
             self.centerOn(self._image_item)

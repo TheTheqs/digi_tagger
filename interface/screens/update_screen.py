@@ -31,11 +31,11 @@ class UpdateDatabaseScreen(QWidget):
         self.layout.addWidget(self.loading_widget)
 
         # Cria o worker via factory
-        self.worker = self.app_service.worker.get_worker(self.update, directory_path)
+        self.worker = self.app_service.worker.get_worker(self.run_update, directory_path)
         self.worker.finished.connect(self._on_update_finished)
         self.worker.start()
 
-    def update(self, directory_path: str) -> list[str]:
+    def run_update(self, directory_path: str) -> list[str]:
         logs = []
         paths = self.app_service.map.map_directory(directory_path)
 

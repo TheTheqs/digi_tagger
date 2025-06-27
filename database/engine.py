@@ -1,5 +1,3 @@
-# database/engine.py
-
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -10,8 +8,7 @@ from database.base import Base
 from database.models.tag import Tag
 from database.models.tag_type import TagType
 from database.models.sprite import Sprite
-from database.models.configuration import Configuration
-from database.models.configuration_tags import configuration_tags
+from database.models.sprite_tag import SpriteTag  # ✅ Novo relacionamento
 
 # Criando pasta para o banco (se não existir)
 os.makedirs("data", exist_ok=True)

@@ -1,4 +1,5 @@
-# /database/models/tag.py
+# database/models/tag.py
+
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
@@ -16,9 +17,6 @@ class Tag(Base):
     updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
     tag_type = relationship("TagType", back_populates="tags")
+    sprite_tags = relationship("SpriteTag", back_populates="tag", cascade="all, delete-orphan", overlaps="sprites")
+    sprites = relationship("Sprite", secondary="sprite_tags", back_populates="tags", overlaps="sprite_tags")
 
-    configurations = relationship(
-        "Configuration",
-        secondary="configuration_tags",
-        back_populates="tags"
-    )

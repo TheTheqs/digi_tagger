@@ -14,5 +14,4 @@ class TagType(Base):
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
-    # relacionamento
     tags = relationship("Tag", back_populates="tag_type")

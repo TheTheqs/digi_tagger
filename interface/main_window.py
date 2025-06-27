@@ -41,7 +41,7 @@ class MainWindow(QMainWindow):
         if destiny == "home":
             self.stack.setCurrentWidget(self.home_screen)
         elif destiny == "update":
-            self.update_screen.start_update("/home/paulo/matheqs/downloads/sprites/raw")
+            self.update_screen.start_update("/home/paulo/matheqs/downloads/sprites/edited")
             self.stack.setCurrentWidget(self.update_screen)
         elif destiny == "data":
             self.data_screen.update_screen()
