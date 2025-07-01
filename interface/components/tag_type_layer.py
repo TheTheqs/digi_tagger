@@ -1,5 +1,3 @@
-# interface/components/tag_type_layer.py
-
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel
 from interface.components.dropdown import Dropdown
 from interface.components.tool_button import ToolButton
@@ -9,7 +7,7 @@ class TagTypeLayer(QWidget):
         self,
         tag_type_id: int,
         tag_type_name: str,
-        tag_names: list[str],
+        tag_items: list[tuple[str, int]],
         on_add_tag_callback,
         on_request_delete_tag_type_callback,
         on_request_delete_tag_callback
@@ -27,7 +25,7 @@ class TagTypeLayer(QWidget):
         self.label = QLabel(self.tag_type_name)
         layout.addWidget(self.label)
 
-        self.dropdown = Dropdown(tag_names)
+        self.dropdown = Dropdown(tag_items)
         layout.addWidget(self.dropdown)
 
         self.add_button = ToolButton("+", "Adicionar novo Tag", self._on_add_tag)
@@ -48,6 +46,12 @@ class TagTypeLayer(QWidget):
         self.on_request_delete_tag_type_callback(self.tag_type_id)
 
     def _on_delete_tag(self):
-        selected_tag = self.dropdown.currentText()
-        if selected_tag:
-            self.on_request_delete_tag_callback(selected_tag, self.tag_type_id)
+        tag_id = self.dropdown.get_selected_id()
+        if tag_id is not None:
+            self.on_request_delete_tag_callback(tag_id, self.tag_type_id)
+
+    def update_tags(self, tag_items: list[tuple[str, int]]):
+        self.dropdown.set_items(tag_items)
+
+    def get_selected_tag_id(self) -> int | None:
+        return self.dropdown.get_selected_id()

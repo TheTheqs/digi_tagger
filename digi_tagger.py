@@ -10,9 +10,9 @@ from services.worker_service import WorkerService
 
 
 def main():
-    print("Inicializando o banco de dados Eyeing...")
+    print("Inicializando o banco de dados...")
     init_db()
-    print("Banco de dados criado com sucesso!")
+    print("Banco de dados iniciado com sucesso!")
     #Instâncias
     db_service = DBService()
     worker_service = WorkerService()

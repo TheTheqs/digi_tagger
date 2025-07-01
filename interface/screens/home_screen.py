@@ -18,14 +18,10 @@ class HomeScreen(QWidget):
         # Buttons
         btn_scrap= CustomButton("🔍 Autalizar Banco de Dados", lambda: self.navi("update"))
         layout.addWidget(btn_scrap)
+        btn_tagging = CustomButton("🖼️ Curadoria", lambda: self.navi("tagging"))
+        layout.addWidget(btn_tagging)
         btn_analyse = CustomButton("📊 Análise de Dados", lambda: self.navi("data"))
         layout.addWidget(btn_analyse)
-        btn_edit = CustomButton("🖼️ Classificar Próximo Sprite", lambda: self.navi("edit"))
-        layout.addWidget(btn_edit)
-        btn_review = CustomButton("🔍🗂️ Revisar Dataset", lambda: self.navi("review"))
-        layout.addWidget(btn_review)
-        btn_tags = CustomButton("🏷️️ Admistrar Tags", lambda: self.navi("tags"))
-        layout.addWidget(btn_tags)
 
         layout.addStretch()
         self.setLayout(layout)

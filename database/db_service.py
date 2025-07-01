@@ -1,4 +1,5 @@
 # services/db_service.py
+from typing import Tuple
 
 from database.engine import SessionLocal
 from database.models.sprite import Sprite
@@ -20,12 +21,6 @@ class DBService:
             session.refresh(sprite)
             return sprite
 
-    def mark_sprite_as_edited(self, sprite_id: int):
-        with SessionLocal() as session:
-            repo = SpriteRepository(session)
-            repo.mark_sprite_as_edited(sprite_id)
-            session.commit()
-
     def get_sprite_by_id(self, sprite_id: int) -> Sprite | None:
         with SessionLocal() as session:
             repo = SpriteRepository(session)
@@ -42,15 +37,15 @@ class DBService:
             repo.add_tag(sprite_id, tag_id)
             session.commit()
 
-    def get_sprite_statistics(self) -> tuple[int, int, int]:
+    def get_all_unlabeled_sprite_id_paths(self, tag_type_id: int) -> list[tuple[int, str]]:
         with SessionLocal() as session:
             repo = SpriteRepository(session)
-            return repo.get_statistics()
+            return repo.get_all_unlabeled_by_tag_type(tag_type_id)
 
-    def get_next_unedited_sprite(self):
+    def get_all_sprites(self) -> list[tuple[int, str]]:
         with SessionLocal() as session:
             repo = SpriteRepository(session)
-            return repo.get_next_unedited()
+            return repo.get_all_sprite_id_paths()
 
     # ------- TAG -------
     def create_tag(self, tag_name: str, tag_type_id: int):
@@ -73,10 +68,10 @@ class DBService:
             repo.delete(tag)
             session.commit()
 
-    def get_tags_by_tag_type_id(self, tag_type_id: int) -> list[Tag]:
+    def get_tags_by_tag_type(self, tag_type_id: int) -> list[Tuple[str, int]]:
         with SessionLocal() as session:
             repo = TagRepository(session)
-            return repo.get_by_tag_type_id(tag_type_id)
+            return repo.get_tag_id_name_by_tag_type_id(tag_type_id)
 
     # ------- TAG TYPE -------
     def create_tag_type(self, name: str):
@@ -95,37 +90,12 @@ class DBService:
             repo.delete(tag_type)
             session.commit()
 
-    def get_tag_type_name(self, tag_type_id: int) -> str:
-        with SessionLocal() as session:
-            repo = TagTypeRepository(session)
-            return repo.get_tag_type_name(tag_type_id)
-
     def get_tag_type_by_id(self, tag_type_id: int) -> TagType | None:
         with SessionLocal() as session:
             repo = TagTypeRepository(session)
             return repo.get_by_id(tag_type_id)
 
-    def get_all_tag_type_ids(self) -> list[int]:
+    def get_all_tag_types(self) -> list[tuple[str, int]]:
         with SessionLocal() as session:
             repo = TagTypeRepository(session)
-            return repo.get_all_ids()
-
-    def get_all_tag_types(self) -> list[TagType]:
-        with SessionLocal() as session:
-            repo = TagTypeRepository(session)
-            return repo.get_all()
-
-    def get_tag_id_by_name(self, tag_name: str, tag_type_id: int) -> int | None:
-        with SessionLocal() as session:
-            repo = TagRepository(session)
-            return repo.get_tag_id_by_name(tag_name, tag_type_id)
-
-    def get_tag_type_with_tags(self, tag_type_id: int) -> tuple[str, list[str]]:
-        with SessionLocal() as session:
-            tag_type_repo = TagTypeRepository(session)
-            tag_repo = TagRepository(session)
-
-            tag_type_name = tag_type_repo.get_tag_type_name(tag_type_id)
-            tag_names = tag_repo.get_tag_names_by_tag_type_id(tag_type_id)
-
-            return tag_type_name, tag_names
+            return repo.get_all_id_name_pairs()

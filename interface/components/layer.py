@@ -1,3 +1,5 @@
+# interface/components/layer.py
+
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSizePolicy
 from PySide6.QtGui import QPixmap, QPainter, QPen, QColor
 from PySide6.QtCore import Qt, QRectF

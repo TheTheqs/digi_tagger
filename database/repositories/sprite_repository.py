@@ -14,12 +14,6 @@ class SpriteRepository:
         self.session.add(sprite)
         return sprite
 
-    def mark_sprite_as_edited(self, sprite_id: int):
-        sprite = self.session.query(Sprite).filter(Sprite.id == sprite_id).first()
-        if not sprite:
-            raise ValueError(f"Sprite com ID {sprite_id} não encontrado.")
-        sprite.edited = True
-
     def get_by_id(self, sprite_id: int) -> Sprite | None:
         return self.session.query(Sprite).filter(Sprite.id == sprite_id).first()
 
@@ -46,11 +40,26 @@ class SpriteRepository:
             sprite_tag = SpriteTag(sprite_id=sprite_id, tag_id=tag_id)
             self.session.add(sprite_tag)
 
-    def get_statistics(self) -> tuple[int, int, int]:
-        total = self.session.query(func.count()).select_from(Sprite).scalar()
-        edited = self.session.query(func.count()).select_from(Sprite).filter(Sprite.edited == True).scalar()
-        unedited = self.session.query(func.count()).select_from(Sprite).filter(Sprite.edited == False).scalar()
-        return total, edited, unedited
+    def get_all_sprite_id_paths(self) -> list[tuple[int, str]]:
+        sprites = self.session.query(Sprite.id, Sprite.path).all()
+        return sprites
 
-    def get_next_unedited(self) -> Sprite | None:
-        return self.session.query(Sprite).filter_by(edited=False).first()
+    def get_all_unlabeled_by_tag_type(self, tag_type_id: int) -> list[tuple[int, str]]:
+        # Subquery: todos os sprite_ids com pelo menos uma tag do tipo fornecido
+        from database.models.tag import Tag
+        from sqlalchemy import select
+
+        subquery = (
+            select(Sprite.id)
+            .join(Sprite.tags)
+            .filter(Tag.tag_type_id == tag_type_id)
+        )
+
+        # Query principal: pega os sprites que não estão na subquery
+        sprites = (
+            self.session.query(Sprite.id, Sprite.path)
+            .filter(~Sprite.id.in_(subquery))
+            .all()
+        )
+
+        return sprites

@@ -16,18 +16,5 @@ class TagTypeRepository:
     def get_by_id(self, tag_type_id: int) -> TagType | None:
         return self.session.query(TagType).filter(TagType.id == tag_type_id).first()
 
-    def get_by_name(self, name: str) -> TagType | None:
-        return self.session.query(TagType).filter(TagType.name == name).first()
-
-    def get_tag_type_name(self, tag_type_id: int) -> str:
-        tag_type = self.get_by_id(tag_type_id)
-        if not tag_type:
-            raise ValueError("TagType não encontrado.")
-        return tag_type.name
-
-    def get_all_ids(self) -> list[int]:
-        result = self.session.query(TagType.id).all()
-        return [row[0] for row in result]
-
-    def get_all(self) -> list[TagType]:
-        return self.session.query(TagType).all()
+    def get_all_id_name_pairs(self) -> list[tuple[str, int]]:
+        return self.session.query(TagType.name, TagType.id).all()
