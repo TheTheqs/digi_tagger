@@ -1,3 +1,10 @@
 PySide6>=6.6.0   # Interface gráfica completa (Qt)
 Pillow>=10.0.0   # Manipulação básica de imagem (abrir sprites, carregar no QPixmap)
 SQLAlchemy>=2.0.0  # ORM para o banco de dados
+numpy~=2.2.6
+# IA
+torch>=2.0.0; platform_system != "Windows"
+tqdm>=4.66.0
+clip~=1.0
+torch~=2.7.1
+scikit-learn~=1.7.0

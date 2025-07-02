@@ -18,8 +18,10 @@ class HomeScreen(QWidget):
         # Buttons
         btn_scrap= CustomButton("🔍 Autalizar Banco de Dados", lambda: self.navi("update"))
         layout.addWidget(btn_scrap)
-        btn_tagging = CustomButton("🖼️ Curadoria", lambda: self.navi("tagging"))
+        btn_tagging = CustomButton("🖼️ Curadoria Manual", lambda: self.navi("tagging"))
         layout.addWidget(btn_tagging)
+        btn_auto = CustomButton("📊 Revisar Curadoria Automática", lambda: self.navi("review"))
+        layout.addWidget(btn_auto)
         btn_analyse = CustomButton("📊 Análise de Dados", lambda: self.navi("data"))
         layout.addWidget(btn_analyse)
 

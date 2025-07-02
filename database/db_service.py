@@ -1,12 +1,18 @@
 # services/db_service.py
+import pickle
 from typing import Tuple
 
+from database.dto.suggestion_response_dto import SuggestionDTO
 from database.engine import SessionLocal
+from database.models.embedding import Embedding
 from database.models.sprite import Sprite
+from database.models.suggestion import Suggestion
 from database.models.tag import Tag
 from database.models.tag_type import TagType
+from database.repositories.embedding_repository import EmbeddingRepository
 
 from database.repositories.sprite_repository import SpriteRepository
+from database.repositories.suggestion_repository import SuggestionRepository
 from database.repositories.tag_repository import TagRepository
 from database.repositories.tag_type_repository import TagTypeRepository
 
@@ -46,6 +52,16 @@ class DBService:
         with SessionLocal() as session:
             repo = SpriteRepository(session)
             return repo.get_all_sprite_id_paths()
+
+    def get_sprite_id_by_paths(self, paths: list[str]) -> list[tuple[int, str]]:
+        with SessionLocal() as session:
+            repo = SpriteRepository(session)
+            return repo.get_sprite_id_by_paths(paths)
+
+    def sprite_has_tag_type(self, sprite_id: int, tag_type_id: int) -> bool:
+        with SessionLocal() as session:
+            repo = SpriteRepository(session)
+            return repo.has_tag_type(sprite_id, tag_type_id)
 
     # ------- TAG -------
     def create_tag(self, tag_name: str, tag_type_id: int):
@@ -99,3 +115,59 @@ class DBService:
         with SessionLocal() as session:
             repo = TagTypeRepository(session)
             return repo.get_all_id_name_pairs()
+
+    # ------- EMBEDDING -------
+    def create_embeddings(self, embedding_data: list[tuple[int, str, object]]):
+        """
+        Recebe lista de tuplas (sprite_id, source, np.ndarray)
+        """
+        with SessionLocal() as session:
+            repo = EmbeddingRepository(session)
+            embeddings = [
+                Embedding(
+                    sprite_id=sprite_id,
+                    source=source,
+                    vector=pickle.dumps(vector)
+                )
+                for sprite_id, source, vector in embedding_data
+            ]
+            repo.create_many(embeddings)
+            session.commit()
+
+    def embedding_exists(self, sprite_id: int, source: str) -> bool:
+        with SessionLocal() as session:
+            repo = EmbeddingRepository(session)
+            return repo.exists_by_sprite_and_source(sprite_id, source)
+
+    def get_embeddings_by_source(self, source: str) -> list[tuple[int, object]]:
+        with SessionLocal() as session:
+            repo = EmbeddingRepository(session)
+            return repo.get_all_by_source(source)
+
+    # ------- SUGGESTION -------
+    def create_suggestion(self, sprite_ids: list[int], description: str = ""):
+        with SessionLocal() as session:
+            repo = SuggestionRepository(session)
+            suggestion = Suggestion(
+                description=description,
+                verified=False,
+                sprites=[session.get(Sprite, sprite_id) for sprite_id in sprite_ids]
+            )
+            repo.create(suggestion)
+            session.commit()
+
+    def get_next_unverified_suggestion(self) -> SuggestionDTO | None:
+        with SessionLocal() as session:
+            repo = SuggestionRepository(session)
+            return repo.get_next_unverified_dto()
+
+    def mark_suggestion_as_verified(self, suggestion_id: int):
+        with SessionLocal() as session:
+            repo = SuggestionRepository(session)
+            repo.mark_verified(suggestion_id)
+            session.commit()
+
+    def get_total_suggestions_count(self) -> int:
+        with SessionLocal() as session:
+            repo = SuggestionRepository(session)
+            return repo.count_total_suggestions()

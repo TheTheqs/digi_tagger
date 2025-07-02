@@ -1,3 +1,5 @@
+# interface/screens/tagging_grid_screen.py
+
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from interface.components.title import Title
 from interface.components.back_button import BackButton

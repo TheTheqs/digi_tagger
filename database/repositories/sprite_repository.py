@@ -63,3 +63,20 @@ class SpriteRepository:
         )
 
         return sprites
+
+    def get_sprite_id_by_paths(self, paths: list[str]) -> list[tuple[int, str]]:
+        sprites = (
+            self.session.query(Sprite.id, Sprite.path)
+            .filter(Sprite.path.in_(paths))
+            .all()
+        )
+        return sprites
+
+    def has_tag_type(self, sprite_id: int, tag_type_id: int) -> bool:
+        sprite = self.session.query(Sprite).filter(Sprite.id == sprite_id).first()
+        if not sprite:
+            return False
+        for tag in sprite.tags:
+            if tag.tag_type_id == tag_type_id:
+                return True
+        return False

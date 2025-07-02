@@ -15,7 +15,8 @@ class LoadingScreen(QWidget):
         layout.setSpacing(20)
 
         # Title
-        layout.addWidget(Title(message))
+        self.title = Title(message)
+        layout.addWidget(self.title)
 
         # Animation
         self.loading_label = QLabel()
@@ -27,3 +28,9 @@ class LoadingScreen(QWidget):
 
         layout.addWidget(self.loading_label)
         self.setLayout(layout)
+
+    def set_message(self, message: str):
+        """
+        Atualiza a mensagem exibida no título da tela de loading.
+        """
+        self.title.setText(message)
