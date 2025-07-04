@@ -20,8 +20,6 @@ class HomeScreen(QWidget):
         layout.addWidget(btn_scrap)
         btn_tagging = CustomButton("🖼️ Curadoria Manual", lambda: self.navi("tagging"))
         layout.addWidget(btn_tagging)
-        btn_auto = CustomButton("📊 Revisar Curadoria Automática", lambda: self.navi("review"))
-        layout.addWidget(btn_auto)
         btn_analyse = CustomButton("📊 Análise de Dados", lambda: self.navi("data"))
         layout.addWidget(btn_analyse)
 

@@ -1,41 +1,41 @@
-# services/db_service.py
-import pickle
-from typing import Tuple
+# database/db_service.py
 
-from database.dto.suggestion_response_dto import SuggestionDTO
+from typing import List
 from database.engine import SessionLocal
-from database.models.embedding import Embedding
 from database.models.sprite import Sprite
-from database.models.suggestion import Suggestion
-from database.models.tag import Tag
 from database.models.tag_type import TagType
-from database.repositories.embedding_repository import EmbeddingRepository
-
 from database.repositories.sprite_repository import SpriteRepository
-from database.repositories.suggestion_repository import SuggestionRepository
 from database.repositories.tag_repository import TagRepository
 from database.repositories.tag_type_repository import TagTypeRepository
+from database.dtos import (
+    SpriteRequestDTO, SpriteResponseDTO, SpriteResumeDTO,
+    TagRequestDTO, TagResponseDTO, TagResumeDTO,
+    TagTypeRequestDTO, TagTypeResponseDTO
+)
+
 
 class DBService:
 
     # ------- SPRITE -------
-    def create_sprite(self, path: str) -> Sprite:
+    def create_sprite(self, dto: SpriteRequestDTO) -> SpriteResponseDTO:
         with SessionLocal() as session:
             repo = SpriteRepository(session)
-            sprite = repo.create_sprite(path)
+            sprite = repo.create_sprite(dto.path, dto.vector, dto.size)
             session.commit()
             session.refresh(sprite)
-            return sprite
+            return self._to_sprite_response_dto(sprite)
 
-    def get_sprite_by_id(self, sprite_id: int) -> Sprite | None:
+    def get_sprite_by_id(self, sprite_id: int) -> SpriteResponseDTO | None:
         with SessionLocal() as session:
             repo = SpriteRepository(session)
-            return repo.get_by_id(sprite_id)
+            sprite = repo.get_by_id(sprite_id)
+            return self._to_sprite_response_dto(sprite) if sprite else None
 
-    def get_sprites_by_tag_id(self, tag_id: int) -> list[Sprite]:
+    def get_sprites_by_tag_id(self, tag_id: int) -> List[SpriteResumeDTO]:
         with SessionLocal() as session:
             repo = SpriteRepository(session)
-            return repo.get_by_tag_id(tag_id)
+            sprites = repo.get_by_tag_id(tag_id)
+            return [self._to_sprite_resume_dto(s) for s in sprites]
 
     def add_tag_to_sprite(self, sprite_id: int, tag_id: int):
         with SessionLocal() as session:
@@ -43,20 +43,23 @@ class DBService:
             repo.add_tag(sprite_id, tag_id)
             session.commit()
 
-    def get_all_unlabeled_sprite_id_paths(self, tag_type_id: int) -> list[tuple[int, str]]:
+    def get_all_unlabeled_sprite_id_paths(self, tag_type_id: int) -> List[SpriteResumeDTO]:
         with SessionLocal() as session:
             repo = SpriteRepository(session)
-            return repo.get_all_unlabeled_by_tag_type(tag_type_id)
+            sprites = repo.get_all_unlabeled_by_tag_type(tag_type_id)
+            return [self._to_sprite_resume_dto(s) for s in sprites]
 
-    def get_all_sprites(self) -> list[tuple[int, str]]:
+    def get_all_sprites(self) -> List[SpriteResumeDTO]:
         with SessionLocal() as session:
             repo = SpriteRepository(session)
-            return repo.get_all_sprite_id_paths()
+            sprites = repo.get_all()
+            return [self._to_sprite_resume_dto(s) for s in sprites]
 
-    def get_sprite_id_by_paths(self, paths: list[str]) -> list[tuple[int, str]]:
+    def get_sprite_id_by_paths(self, paths: List[str]) -> List[SpriteResumeDTO]:
         with SessionLocal() as session:
             repo = SpriteRepository(session)
-            return repo.get_sprite_id_by_paths(paths)
+            sprites = repo.get_sprite_id_by_paths(paths)
+            return [self._to_sprite_resume_dto(s) for s in sprites]
 
     def sprite_has_tag_type(self, sprite_id: int, tag_type_id: int) -> bool:
         with SessionLocal() as session:
@@ -64,15 +67,14 @@ class DBService:
             return repo.has_tag_type(sprite_id, tag_type_id)
 
     # ------- TAG -------
-    def create_tag(self, tag_name: str, tag_type_id: int):
+    def create_tag(self, dto: TagRequestDTO):
         with SessionLocal() as session:
             tag_type_repo = TagTypeRepository(session)
-            if not tag_type_repo.get_by_id(tag_type_id):
-                raise ValueError(f"TagType com ID {tag_type_id} não existe.")
+            if not tag_type_repo.get_by_id(dto.tag_type_id):
+                raise ValueError(f"TagType com ID {dto.tag_type_id} não existe.")
 
             tag_repo = TagRepository(session)
-            tag = Tag(name=tag_name, tag_type_id=tag_type_id)
-            tag_repo.create(tag)
+            tag_repo.create(dto.tag_type_id, dto.name, dto.description)
             session.commit()
 
     def delete_tag(self, tag_id: int):
@@ -84,18 +86,49 @@ class DBService:
             repo.delete(tag)
             session.commit()
 
-    def get_tags_by_tag_type(self, tag_type_id: int) -> list[Tuple[str, int]]:
+    def get_tags_by_tag_type(self, tag_type_id: int) -> List[TagResponseDTO]:
         with SessionLocal() as session:
             repo = TagRepository(session)
-            return repo.get_tag_id_name_by_tag_type_id(tag_type_id)
+            tags = repo.get_by_tag_type_id(tag_type_id)
+            return [
+                TagResponseDTO(
+                    id=tag.id,
+                    tag_type_id=tag.tag_type_id,
+                    name=tag.name,
+                    description=tag.description,
+                    sprites=[SpriteResumeDTO(id=s.id, path=s.path) for s in tag.sprites]
+                ) for tag in tags
+            ]
+
+    def get_all_tags(self) -> list[TagResponseDTO]:
+        with SessionLocal() as session:
+            repo = TagRepository(session)
+            tags = repo.get_all()
+            return [
+                TagResponseDTO(
+                    id=tag.id,
+                    tag_type_id=tag.tag_type_id,
+                    name=tag.name,
+                    description=tag.description,
+                    sprites=[SpriteResumeDTO(id=s.id, path=s.path) for s in tag.sprites]
+                ) for tag in tags
+            ]
+
+    def delete_all_tags(self):
+        with SessionLocal() as session:
+            repo = TagRepository(session)
+            repo.delete_all()
+            session.commit()
 
     # ------- TAG TYPE -------
-    def create_tag_type(self, name: str):
+    def create_tag_type(self, dto: TagTypeRequestDTO) -> TagTypeResponseDTO:
         with SessionLocal() as session:
             repo = TagTypeRepository(session)
-            tag_type = TagType(name=name)
+            tag_type = TagType(name=dto.name)
             repo.create(tag_type)
             session.commit()
+            session.refresh(tag_type)
+            return TagTypeResponseDTO(id=tag_type.id, name=tag_type.name)
 
     def delete_tag_type(self, tag_type_id: int):
         with SessionLocal() as session:
@@ -106,68 +139,39 @@ class DBService:
             repo.delete(tag_type)
             session.commit()
 
-    def get_tag_type_by_id(self, tag_type_id: int) -> TagType | None:
+    def get_tag_type_by_id(self, tag_type_id: int) -> TagTypeResponseDTO | None:
         with SessionLocal() as session:
             repo = TagTypeRepository(session)
-            return repo.get_by_id(tag_type_id)
+            tag_type = repo.get_by_id(tag_type_id)
+            if not tag_type:
+                return None
+            return TagTypeResponseDTO(id=tag_type.id, name=tag_type.name)
 
-    def get_all_tag_types(self) -> list[tuple[str, int]]:
+    def get_all_tag_types(self) -> List[TagTypeResponseDTO]:
         with SessionLocal() as session:
             repo = TagTypeRepository(session)
-            return repo.get_all_id_name_pairs()
+            tag_types = repo.get_all()
+            return [TagTypeResponseDTO(id=tt.id, name=tt.name) for tt in tag_types]
 
-    # ------- EMBEDDING -------
-    def create_embeddings(self, embedding_data: list[tuple[int, str, object]]):
-        """
-        Recebe lista de tuplas (sprite_id, source, np.ndarray)
-        """
+    def delete_all_tag_types(self):
         with SessionLocal() as session:
-            repo = EmbeddingRepository(session)
-            embeddings = [
-                Embedding(
-                    sprite_id=sprite_id,
-                    source=source,
-                    vector=pickle.dumps(vector)
-                )
-                for sprite_id, source, vector in embedding_data
+            repo = TagTypeRepository(session)
+            repo.delete_all()
+            session.commit()
+
+    # ------- HELPERS -------
+
+    def _to_sprite_response_dto(self, sprite: Sprite) -> SpriteResponseDTO:
+        return SpriteResponseDTO(
+            id=sprite.id,
+            path=sprite.path,
+            vector= sprite.embeddings,
+            size=sprite.size,
+            tags=[
+                TagResumeDTO(id=tag.id, name=tag.name, tag_type_id=tag.tag_type_id)
+                for tag in sprite.tags
             ]
-            repo.create_many(embeddings)
-            session.commit()
+        )
 
-    def embedding_exists(self, sprite_id: int, source: str) -> bool:
-        with SessionLocal() as session:
-            repo = EmbeddingRepository(session)
-            return repo.exists_by_sprite_and_source(sprite_id, source)
-
-    def get_embeddings_by_source(self, source: str) -> list[tuple[int, object]]:
-        with SessionLocal() as session:
-            repo = EmbeddingRepository(session)
-            return repo.get_all_by_source(source)
-
-    # ------- SUGGESTION -------
-    def create_suggestion(self, sprite_ids: list[int], description: str = ""):
-        with SessionLocal() as session:
-            repo = SuggestionRepository(session)
-            suggestion = Suggestion(
-                description=description,
-                verified=False,
-                sprites=[session.get(Sprite, sprite_id) for sprite_id in sprite_ids]
-            )
-            repo.create(suggestion)
-            session.commit()
-
-    def get_next_unverified_suggestion(self) -> SuggestionDTO | None:
-        with SessionLocal() as session:
-            repo = SuggestionRepository(session)
-            return repo.get_next_unverified_dto()
-
-    def mark_suggestion_as_verified(self, suggestion_id: int):
-        with SessionLocal() as session:
-            repo = SuggestionRepository(session)
-            repo.mark_verified(suggestion_id)
-            session.commit()
-
-    def get_total_suggestions_count(self) -> int:
-        with SessionLocal() as session:
-            repo = SuggestionRepository(session)
-            return repo.count_total_suggestions()
+    def _to_sprite_resume_dto(self, sprite: Sprite) -> SpriteResumeDTO:
+        return SpriteResumeDTO(id=sprite.id, path=sprite.path)

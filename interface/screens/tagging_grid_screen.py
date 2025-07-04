@@ -1,6 +1,6 @@
 # interface/screens/tagging_grid_screen.py
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSpinBox
 from interface.components.title import Title
 from interface.components.back_button import BackButton
 from interface.components.loading_screen import LoadingScreen
@@ -11,7 +11,9 @@ from interface.components.dropdown import Dropdown
 from interface.components.tag_display import TagDisplay
 from interface.components.create_tag_popup import CreateTagPopup
 from interface.components.create_tag_type_popup import CreateTagTypePopup
+from interface.components.string_list_box import StringListBox
 from services.application_services import ApplicationService
+from interface.screens.managers.tagging_data_manager import TaggingDataManager
 
 
 class TaggingGridScreen(QWidget):
@@ -19,15 +21,14 @@ class TaggingGridScreen(QWidget):
         super().__init__()
 
         self.navi = navigate_callback
-        self.app_service: ApplicationService = app_service
+        self.app_service = app_service
         self.update_confirm_screen = update_confirm_screen_callback
-        self.worker = None
-        self.loading_widget = LoadingScreen("🧠 Carregando sprites...")
+        self.manager = TaggingDataManager(app_service.db, app_service.assist)
 
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.title = Title("🧩 Curadoria de Sprites")
+        self.title = Title("\U0001F9E9 Curadoria de Sprites")
         self.layout.addWidget(self.title)
 
         self.back_button = BackButton(lambda: self.navi("home"))
@@ -36,49 +37,76 @@ class TaggingGridScreen(QWidget):
         self.create_tag_type_button = CustomButton("Criar TagType", self._open_create_tag_type_popup)
         self.layout.addWidget(self.create_tag_type_button)
 
-        self.tag_type_dropdown = Dropdown(self._get_tag_type_options())
+        # Dropdown 1 – Seleção do TagType
+        self.tag_type_dropdown = Dropdown([("\U0001F552 Carregando tipos de tag...", -1)])
         self.tag_type_dropdown.currentIndexChanged.connect(self._on_tag_type_selected)
         self.layout.addWidget(self.tag_type_dropdown)
 
+        # Dropdown 2 – Filtro geral
+        self.filter_dropdown = Dropdown([("\U0001F50E Filtrar por tag (qualquer tipo)", -1)])
+        self.filter_dropdown.currentIndexChanged.connect(self._on_filter_tag_selected)
+        self.layout.addWidget(self.filter_dropdown)
+
+        # Dropdown 3 – Curadoria assistida
+        self.assist_dropdown = Dropdown([("\U0001F916 Curadoria assistida por similaridade", -1)])
+        self.assist_dropdown.currentIndexChanged.connect(self._on_assist_tag_selected)
+        self.layout.addWidget(self.assist_dropdown)
+
+        # Campo de quantidade top_k para curadoria
+        assist_layout = QHBoxLayout()
+        assist_label = QLabel("Quantidade de sprites similares (Top-K):")
+        self.top_k_input = QSpinBox()
+        self.top_k_input.setRange(1, 500)
+        self.top_k_input.setValue(50)
+        assist_layout.addWidget(assist_label)
+        assist_layout.addWidget(self.top_k_input)
+        self.layout.addLayout(assist_layout)
+
         self.tag_display = None
-        self.proceed_button = None  # será adicionado apenas se tag_display estiver presente
+        self.proceed_button = None
 
         self._build()
 
     def _build(self):
+        self.loading_widget = LoadingScreen("\U0001F9E0 Carregando sprites e tags...")
         self.layout.addWidget(self.loading_widget)
-        self.worker = self.app_service.worker.get_worker(self.load_sprites)
-        self.worker.finished.connect(self._on_sprites_loaded)
+
+        self.worker = self.app_service.worker.get_worker(self._load_data)
+        self.worker.finished.connect(self._on_data_loaded)
         self.worker.start()
 
-    def load_sprites(self) -> list[tuple[int, str]]:
-        return self.app_service.db.get_all_sprites()
+    def _load_data(self):
+        try:
+            self.manager.load_all()
+            return "OK"
+        except Exception as e:
+            return e
 
-    def _on_sprites_loaded(self, result):
+    def _on_data_loaded(self, result):
         self.layout.removeWidget(self.loading_widget)
         self.loading_widget.setParent(None)
         self.layout.addWidget(self.back_button)
 
         if isinstance(result, Exception):
-            from interface.components.string_list_box import StringListBox
-            error_box = StringListBox([f"[ERRO] Falha ao carregar sprites: {result}"])
+            error_box = StringListBox([f"[ERRO] Falha ao carregar dados: {result}"])
             self.layout.addWidget(error_box)
-        else:
-            sprite_widgets = [
-                SelectableSprite(sprite_id=sid, image_path=path, selection_callback=self.grid.on_selection_toggled)
-                for sid, path in result
-            ]
-            self.grid.update_grid(sprite_widgets)
-            self.layout.addWidget(self.grid)
+            return
 
-    def _get_tag_type_options(self) -> list[tuple[str, int]]:
-        tag_types = self.app_service.db.get_all_tag_types()
-        return [("<Nenhum TagType selecionado>", -1)] + tag_types
+        tag_type_options = [("<Selecionar tipo de tag>", -1)] + [
+            (tt.name, tt.id) for tt in self.manager.get_all_tag_types()
+        ]
+        self.tag_type_dropdown.set_items(tag_type_options)
+
+        all_tags_options = [("Nenhuma tag selecionada", -1)] + self.manager.get_tag_dropdown_options()
+        self.filter_dropdown.set_items(all_tags_options)
+        self.assist_dropdown.set_items(all_tags_options)
+
+        self._update_sprite_grid(self.manager.get_all_sprites())
+        self.layout.addWidget(self.grid)
 
     def _on_tag_type_selected(self):
         tag_type_id = self.tag_type_dropdown.get_selected_id()
 
-        # Remove componentes antigos
         for comp in [self.tag_display, self.proceed_button]:
             if comp:
                 self.layout.removeWidget(comp)
@@ -88,26 +116,64 @@ class TaggingGridScreen(QWidget):
         self.proceed_button = None
 
         if tag_type_id == -1:
-            sprites = self.app_service.db.get_all_sprites()
-        else:
-            sprites = self.app_service.db.get_all_unlabeled_sprite_id_paths(tag_type_id)
-            tag_type_name = self.tag_type_dropdown.get_selected_text()
-            tag_options = self.app_service.db.get_tags_by_tag_type(tag_type_id)
+            sprites = self.manager.get_all_sprites()
+            self._update_sprite_grid(sprites)
+            return
 
-            self.tag_display = TagDisplay(
-                tag_type_id=tag_type_id,
-                tag_type_name=tag_type_name,
-                tag_items=tag_options,
-                on_add_tag_callback=self._on_create_tag
-            )
-            self.layout.addWidget(self.tag_display)
+        tag_type = next((tt for tt in self.manager.get_all_tag_types() if tt.id == tag_type_id), None)
+        if tag_type is None:
+            return
 
-            self.proceed_button = CustomButton("📤 Prosseguir", self._on_proceed)
-            self.layout.addWidget(self.proceed_button)
+        sprites = self.manager.get_unlabeled_sprites(tag_type_id)
+        tags = self.manager.get_tags_by_tag_type(tag_type_id)
 
+        self.tag_display = TagDisplay(
+            tag_type=tag_type,
+            tags=tags,
+            on_add_tag_callback=self._on_create_tag
+        )
+        self.layout.addWidget(self.tag_display)
+
+        self.proceed_button = CustomButton("\U0001F4E4 Prosseguir", self._on_proceed)
+        self.layout.addWidget(self.proceed_button)
+
+        self._update_sprite_grid(sprites)
+
+    def _on_filter_tag_selected(self):
+        tag_id = self.filter_dropdown.get_selected_id()
+        if tag_id == -1:
+            return
+
+        sprites = self.manager.get_all_sprites()
+        tag = self.manager.get_tag_by_id(tag_id)
+        if not tag:
+            return
+
+        filtered = [s for s in sprites if any(t.id == tag_id for t in tag.sprites)]
+        self._update_sprite_grid(filtered)
+
+    def _on_assist_tag_selected(self):
+        tag_id = self.assist_dropdown.get_selected_id()
+        tag_type_id = self.tag_type_dropdown.get_selected_id()
+        if tag_id == -1 or tag_type_id == -1:
+            return
+
+        tag = self.manager.get_tag_by_id(tag_id)
+        if not tag:
+            return
+
+        sprites = self.manager.get_unlabeled_sprites(tag_type_id)
+        sprite_responses = [self.app_service.db.get_sprite_by_id(s.id) for s in sprites if s]
+
+        top_k = self.top_k_input.value()
+        curated = self.manager.get_top_k_curated_sprites_by_tag(tag.id, sprite_responses, top_k=top_k)
+
+        self._update_sprite_grid(curated)
+
+    def _update_sprite_grid(self, sprites_dto):
         sprite_widgets = [
-            SelectableSprite(sprite_id=sid, image_path=path, selection_callback=self.grid.on_selection_toggled)
-            for sid, path in sprites
+            SelectableSprite(sprite_id=s.id, image_path=s.path, selection_callback=self.grid.on_selection_toggled)
+            for s in sprites_dto
         ]
         self.grid.update_grid(sprite_widgets)
 
@@ -115,19 +181,16 @@ class TaggingGridScreen(QWidget):
         if not self.tag_display:
             return
 
-        tag = self.tag_display.get_selected_tag()
-        if not tag:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.warning(self, "Tag não selecionada", "Por favor, selecione uma tag para continuar.")
+        tag_dto = self.tag_display.get_selected_tag()
+        if not tag_dto:
+            print("Tag não selecionada, por favor, selecione uma tag para continuar.")
             return
 
-        tag_id, tag_name = tag
-        tag_type_name = self.tag_display.tag_type_name
-        label = f"{tag_type_name}: {tag_name}"
-
+        tag_type = self.tag_display.tag_type
+        label = f"{tag_type.name}: {tag_dto.name}"
         selected_sprites = self.grid.get_selected_infos()
 
-        self.update_confirm_screen(tag_id, label, selected_sprites)
+        self.update_confirm_screen(tag_dto.id, label, selected_sprites)
         self.navi("confirm")
 
     def _open_create_tag_type_popup(self):
@@ -135,16 +198,21 @@ class TaggingGridScreen(QWidget):
         popup.exec()
 
     def _create_tag_type(self, name: str):
-        self.app_service.db.create_tag_type(name)
-        self.tag_type_dropdown.set_items(self._get_tag_type_options())
+        self.manager.create_tag_type(name)
+        tag_type_options = [("<Selecionar tipo de tag>", -1)] + [
+            (tt.name, tt.id) for tt in self.manager.get_all_tag_types()
+        ]
+        self.tag_type_dropdown.set_items(tag_type_options)
 
-    def _on_create_tag(self, tag_type_id: int, tag_type_name: str):
-        popup = CreateTagPopup(lambda name: self._create_tag(tag_type_id, tag_type_name, name))
+    def _on_create_tag(self, tag_type_dto, _ignored_name=None):
+        popup = CreateTagPopup(lambda name, description: self._create_tag(tag_type_dto, name, description))
         popup.exec()
 
-    def _create_tag(self, tag_type_id: int, tag_type_name: str, tag_name: str):
-        self.app_service.db.create_tag(tag_name=tag_name, tag_type_id=tag_type_id)
+    def _create_tag(self, tag_type_dto, tag_name: str, description: str):
+        self.manager.create_tag(tag_type_dto.id, tag_name, description)
         if self.tag_display:
-            updated_tags = self.app_service.db.get_tags_by_tag_type(tag_type_id)
+            updated_tags = self.manager.get_tags_by_tag_type(tag_type_dto.id)
             self.tag_display.update_tags(updated_tags)
 
+    def load_sprites(self):
+        self._build()

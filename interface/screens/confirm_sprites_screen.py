@@ -1,64 +1,73 @@
+# interface/screens/confirm_sprites_screen.py
+
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QMessageBox
 
 from interface.components.back_button import BackButton
 from interface.components.sprite_grid import SpriteGrid
 from interface.components.selectable_sprite import SelectableSprite
 from interface.components.custom_button import CustomButton
+from services.application_services import ApplicationService
+from interface.screens.managers.confirm_sprites_manager import ConfirmSpritesManager
+from database.dtos import SpriteResumeDTO
 
 
 class ConfirmSpritesScreen(QWidget):
-    def __init__(self, navigate_callback, app_service):
+    def __init__(self, navigate_callback, app_service: ApplicationService):
         super().__init__()
 
         self.navi = navigate_callback
         self.app_service = app_service
+        self.manager = ConfirmSpritesManager(app_service.db)
 
-        # Estado atual da tela
-        self.current_tag_id = None
-        self.current_tag_name = ""
-        self.current_sprites = []
-
-        # Componentes
+        # Layout principal
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
+
+        # Botão de voltar
         self.back_button = BackButton(lambda: self.navi("home"))
         self.layout.addWidget(self.back_button)
 
+        # Título
         self.title_label = QLabel("🔍 Confirmação de Sprites")
         self.title_label.setStyleSheet("font-size: 24px; font-weight: bold;")
         self.layout.addWidget(self.title_label)
 
-        self.tag_info_label = QLabel("")  # mostra tag type + tag name
+        # Info da tag selecionada
+        self.tag_info_label = QLabel("")
         self.tag_info_label.setStyleSheet("font-size: 18px; margin-bottom: 12px;")
         self.layout.addWidget(self.tag_info_label)
 
+        # Grid de sprites
         self.sprite_grid = SpriteGrid(sprites_per_row=10)
         self.layout.addWidget(self.sprite_grid)
 
-        # Botões inferiores
+        # Botões de ação
         self.delete_button = CustomButton("❌ Remover Selecionados", self._on_delete_selected)
         self.save_button = CustomButton("✅ Salvar", self._on_save)
 
         self.layout.addWidget(self.delete_button)
         self.layout.addWidget(self.save_button)
 
-    def update_grid(self, tag_id: int, tag_name: str, sprite_tuples: list[tuple[int, str]]):
-        """Atualiza a tela com novos dados"""
-        self.current_tag_id = tag_id
-        self.current_tag_name = tag_name
-        self.current_sprites = sprite_tuples
+    def set_context(self, tag_id: int, tag_name: str, sprites: list[tuple[int, str]]):
+        """
+        Chamada pública para montar a tela com dados recebidos da tela anterior.
+        `sprites` vem como lista de tuplas (id, path), então convertemos para DTO.
+        """
+        dto_list = [SpriteResumeDTO(id=sid, path=path) for sid, path in sprites]
+        self.manager.set_context(tag_id, tag_name, dto_list)
 
         self.tag_info_label.setText(f"Tag selecionada: {tag_name}")
         self._update_grid()
 
     def _update_grid(self):
+        sprite_dtos = self.manager.get_all_sprites()
         sprite_widgets = [
             SelectableSprite(
-                sprite_id=sid,
-                image_path=path,
+                sprite_id=s.id,
+                image_path=s.path,
                 selection_callback=self.sprite_grid.on_selection_toggled
             )
-            for sid, path in self.current_sprites
+            for s in sprite_dtos
         ]
         self.sprite_grid.update_grid(sprite_widgets)
 
@@ -68,17 +77,13 @@ class ConfirmSpritesScreen(QWidget):
             QMessageBox.information(self, "Nada Selecionado", "Nenhum sprite selecionado para remoção.")
             return
 
-        # Atualiza a lista mantendo apenas os que não foram selecionados
-        self.current_sprites = [t for t in self.current_sprites if t[0] not in selected_ids]
+        self.manager.remove_sprites_by_ids(selected_ids)
         self._update_grid()
 
     def _on_save(self):
-        if not self.current_sprites or self.current_tag_id is None:
-            QMessageBox.warning(self, "Erro", "Nenhum sprite ou tag válida.")
-            return
-
-        for sprite_id, _ in self.current_sprites:
-            self.app_service.db.add_tag_to_sprite(sprite_id, self.current_tag_id)
-
-        QMessageBox.information(self, "Sucesso", "Tags associadas com sucesso!")
-        self.navi("tagging")  # Volta pra tela anterior
+        try:
+            self.manager.save()
+            QMessageBox.information(self, "Sucesso", "Tags associadas com sucesso!")
+            self.navi("tagging")  # volta para a tela anterior
+        except Exception as e:
+            QMessageBox.critical(self, "Erro ao salvar", str(e))

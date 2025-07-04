@@ -1,36 +1,42 @@
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel
 from interface.components.dropdown import Dropdown
 from interface.components.tool_button import ToolButton
+from database.dtos import TagTypeResponseDTO, TagResponseDTO
 
 class TagDisplay(QWidget):
-    def __init__(self, tag_type_id: int, tag_type_name: str, tag_items: list[tuple[str, int]], on_add_tag_callback):
+    def __init__(self, tag_type: TagTypeResponseDTO, tags: list[TagResponseDTO], on_add_tag_callback):
         super().__init__()
 
-        self.tag_type_id = tag_type_id
-        self.tag_type_name = tag_type_name
+        self.tag_type = tag_type
+        self.tags = tags
         self.on_add_tag_callback = on_add_tag_callback
 
         layout = QHBoxLayout()
 
-        self.label = QLabel(self.tag_type_name)
+        # Label com nome do tipo de tag
+        self.label = QLabel(self.tag_type.name)
         layout.addWidget(self.label)
 
-        self.dropdown = Dropdown(tag_items)  # agora recebe tuplas (name, id)
+        # Dropdown usando name como label e id como value
+        self.dropdown = Dropdown([(tag.name, tag.id) for tag in self.tags])
         layout.addWidget(self.dropdown)
 
+        # Botão para adicionar nova tag
         self.add_button = ToolButton("+", "Adicionar nova Tag", self._on_add_tag)
         layout.addWidget(self.add_button)
 
         self.setLayout(layout)
 
     def _on_add_tag(self):
-        self.on_add_tag_callback(self.tag_type_id, self.tag_type_name)
+        self.on_add_tag_callback(self.tag_type)
 
-    def update_tags(self, tag_items: list[tuple[str, int]]):
-        self.dropdown.set_items(tag_items)
+    def update_tags(self, new_tags: list[TagResponseDTO]):
+        self.tags = new_tags
+        self.dropdown.set_items([(tag.name, tag.id) for tag in new_tags])
 
     def get_selected_tag_id(self) -> int | None:
         return self.dropdown.get_selected_id()
 
-    def get_selected_tag(self) -> tuple[int, str]:
-        return self.dropdown.get_selected_id(), self.dropdown.get_selected_text()
+    def get_selected_tag(self) -> TagResponseDTO | None:
+        selected_id = self.get_selected_tag_id()
+        return next((tag for tag in self.tags if tag.id == selected_id), None)

@@ -16,5 +16,10 @@ class TagTypeRepository:
     def get_by_id(self, tag_type_id: int) -> TagType | None:
         return self.session.query(TagType).filter(TagType.id == tag_type_id).first()
 
-    def get_all_id_name_pairs(self) -> list[tuple[str, int]]:
-        return self.session.query(TagType.name, TagType.id).all()
+    def get_all(self) -> list[TagType]:
+        return self.session.query(TagType).all()
+
+    def delete_all(self):
+        tags = self.session.query(TagType).all()
+        for tag in tags:
+            self.session.delete(tag)

@@ -10,6 +10,7 @@ class Tag(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
 
     tag_type_id = Column(Integer, ForeignKey("tag_types.id"), nullable=False)
 
