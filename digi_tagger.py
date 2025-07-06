@@ -22,7 +22,7 @@ def tests():
     print(f"{message[result]} {source}")
 
 def main():
-    reset_banco: bool = True
+    reset_banco: bool = False
     reset_message: dict = {
         True: "\033[93m[RESET]\033[0m Tags antigas serão apagadas antes de inicializar.",
         False: "\033[96m[INFO]\033[0m Mantendo tags existentes. Nenhuma exclusão será feita."
@@ -45,6 +45,8 @@ def main():
     app = QApplication(sys.argv)
     print(reset_message[reset_banco])
     if reset_banco:
+        db_service.remove_all_tags_from_sprites()
+        db_service.delete_all_sprites()
         db_service.delete_all_tags()
         db_service.delete_all_tag_types()
     TagInitializer(db_service).run_if_empty()

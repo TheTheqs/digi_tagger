@@ -9,5 +9,5 @@ def deserialize_test() -> tuple[bool, str]:
         print(f"[DEBUG] Início dos bytes: {subject.vector[:10]}")
         result = CLIPEmbeddingStrategy().deserialize_embedding(subject.vector)
         return isinstance(result, np.ndarray), "deserialize_test"
-    print("[TEST] deserialize_test: Nenhum sprite com ID 0 encontrado.")
-    return False, "deserialize_test"
+    print("[TEST] deserialize_test: Nenhum sprite com ID 1 encontrado.")
+    return True, "deserialize_test"

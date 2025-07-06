@@ -29,7 +29,7 @@ class CLIPEmbeddingStrategy(EmbeddingStrategy):
         image = Image.open(image_path).convert("RGB")
 
         # Redimensionamento fiel (pixel-perfect) 96x96 → 192x192
-        upscale_factor = 2
+        upscale_factor = 3
         resized_image = image.resize(
             (image.width * upscale_factor, image.height * upscale_factor),
             resample=Image.Resampling.NEAREST

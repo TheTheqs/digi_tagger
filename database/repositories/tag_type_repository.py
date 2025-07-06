@@ -19,6 +19,9 @@ class TagTypeRepository:
     def get_all(self) -> list[TagType]:
         return self.session.query(TagType).all()
 
+    def get_by_name(self, name: str) -> TagType | None:
+        return self.session.query(TagType).filter(TagType.name == name).first()
+
     def delete_all(self):
         tags = self.session.query(TagType).all()
         for tag in tags:

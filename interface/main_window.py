@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
         elif destiny == "data":
             print("Data Screen")
         elif destiny == "tagging":
-            self.tagging_screen.load_sprites()
+            self.tagging_screen.manager.load_all()
             self.stack.setCurrentWidget(self.tagging_screen)
         elif destiny == "confirm":
             self.stack.setCurrentWidget(self.confirm_screen)

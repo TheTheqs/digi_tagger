@@ -66,6 +66,18 @@ class DBService:
             repo = SpriteRepository(session)
             return repo.has_tag_type(sprite_id, tag_type_id)
 
+    def remove_all_tags_from_sprites(self):
+        with SessionLocal() as session:
+            repo = SpriteRepository(session)
+            repo.remove_all_sprite_tags()
+            session.commit()
+
+    def delete_all_sprites(self):
+        with SessionLocal() as session:
+            repo = SpriteRepository(session)
+            repo.delete_all_sprites()
+            session.commit()
+
     # ------- TAG -------
     def create_tag(self, dto: TagRequestDTO):
         with SessionLocal() as session:
@@ -143,6 +155,14 @@ class DBService:
         with SessionLocal() as session:
             repo = TagTypeRepository(session)
             tag_type = repo.get_by_id(tag_type_id)
+            if not tag_type:
+                return None
+            return TagTypeResponseDTO(id=tag_type.id, name=tag_type.name)
+
+    def get_tag_type_by_name(self, tag_type_name: str) -> TagTypeResponseDTO | None:
+        with SessionLocal() as session:
+            repo = TagTypeRepository(session)
+            tag_type = repo.get_by_name(tag_type_name)
             if not tag_type:
                 return None
             return TagTypeResponseDTO(id=tag_type.id, name=tag_type.name)

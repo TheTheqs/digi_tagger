@@ -31,8 +31,6 @@ class EmbeddingStrategy(ABC):
 
             if embedding.shape != (512,):
                 raise ValueError(f"[ERRO] Embedding com shape inválido: {embedding.shape}, esperado (512,)")
-
-            print(f"[DEBUG] Desserializado com sucesso: dtype={embedding.dtype} | shape={embedding.shape}")
             return embedding.reshape(1, -1)
 
         except Exception as e:

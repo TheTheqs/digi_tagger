@@ -12,6 +12,11 @@ class SpriteRepository:
         self.session = session
 
     def create_sprite(self, path: str, vector: bytes, size: int) -> Sprite:
+        # Verifica se o sprite já existe por path
+        existing = self.session.query(Sprite).filter_by(path=path).first()
+        if existing:
+            print(f"[INFO] Sprite já existente para o path: {path}. Ignorando criação.")
+            return existing
         print(f"[DEBUG] Tipo de subject.vector: {type(vector)}")
         print(f"[DEBUG] Início dos bytes: {vector[:10]}")
         sprite = Sprite(path=path, embeddings=vector, size=size)
@@ -34,7 +39,6 @@ class SpriteRepository:
             sprite_id=sprite_id,
             tag_id=tag_id
         ).first()
-
         if not exists:
             sprite_tag = SpriteTag(sprite_id=sprite_id, tag_id=tag_id)
             self.session.add(sprite_tag)
@@ -60,3 +64,11 @@ class SpriteRepository:
         if not sprite:
             return False
         return any(tag.tag_type_id == tag_type_id for tag in sprite.tags)
+
+    def delete_all_sprites(self):
+        self.session.query(Sprite).delete()
+        print("[INFO] Todos os sprites foram removidos do banco.")
+
+    def remove_all_sprite_tags(self):
+        self.session.query(SpriteTag).delete()
+        print("[INFO] Todas as tags associadas aos sprites foram removidas.")

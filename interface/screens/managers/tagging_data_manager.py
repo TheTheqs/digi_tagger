@@ -30,6 +30,8 @@ class TaggingDataManager:
         return self._all_sprites
 
     def get_unlabeled_sprites(self, tag_type_id: int) -> list[SpriteResumeDTO]:
+        if tag_type_id == -1:
+            return self.get_all_sprites()
         return [
             sprite for sprite in self._all_sprites
             if not self._sprite_has_tag_type(sprite.id, tag_type_id)
@@ -63,6 +65,7 @@ class TaggingDataManager:
     def create_tag(self, tag_type_id: int, name: str, description: str) -> TagResponseDTO:
         tag = self.db.create_tag(TagRequestDTO(tag_type_id, name, description))
         self.refresh_tag_list(tag_type_id)
+        self._all_tags_flat = [tag for tags in self._tags_by_type.values() for tag in tags]
         return tag
 
     def get_tag_by_id(self, tag_id: int) -> TagResponseDTO | None:

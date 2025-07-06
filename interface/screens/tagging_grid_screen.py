@@ -24,6 +24,7 @@ class TaggingGridScreen(QWidget):
         self.app_service = app_service
         self.update_confirm_screen = update_confirm_screen_callback
         self.manager = TaggingDataManager(app_service.db, app_service.assist)
+        self.current_sprites = []
 
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
@@ -37,30 +38,39 @@ class TaggingGridScreen(QWidget):
         self.create_tag_type_button = CustomButton("Criar TagType", self._open_create_tag_type_popup)
         self.layout.addWidget(self.create_tag_type_button)
 
+        # Layout horizontal para os controles superiores
+        controls_layout = QHBoxLayout()
+
         # Dropdown 1 – Seleção do TagType
         self.tag_type_dropdown = Dropdown([("\U0001F552 Carregando tipos de tag...", -1)])
+        self.tag_type_dropdown.setMinimumWidth(200)
         self.tag_type_dropdown.currentIndexChanged.connect(self._on_tag_type_selected)
-        self.layout.addWidget(self.tag_type_dropdown)
+        controls_layout.addWidget(self.tag_type_dropdown)
 
         # Dropdown 2 – Filtro geral
         self.filter_dropdown = Dropdown([("\U0001F50E Filtrar por tag (qualquer tipo)", -1)])
+        self.filter_dropdown.setMinimumWidth(200)
         self.filter_dropdown.currentIndexChanged.connect(self._on_filter_tag_selected)
-        self.layout.addWidget(self.filter_dropdown)
+        controls_layout.addWidget(self.filter_dropdown)
 
         # Dropdown 3 – Curadoria assistida
         self.assist_dropdown = Dropdown([("\U0001F916 Curadoria assistida por similaridade", -1)])
+        self.assist_dropdown.setMinimumWidth(200)
         self.assist_dropdown.currentIndexChanged.connect(self._on_assist_tag_selected)
-        self.layout.addWidget(self.assist_dropdown)
+        controls_layout.addWidget(self.assist_dropdown)
 
         # Campo de quantidade top_k para curadoria
-        assist_layout = QHBoxLayout()
-        assist_label = QLabel("Quantidade de sprites similares (Top-K):")
+        topk_label = QLabel("Top-K:")
         self.top_k_input = QSpinBox()
         self.top_k_input.setRange(1, 500)
         self.top_k_input.setValue(50)
-        assist_layout.addWidget(assist_label)
-        assist_layout.addWidget(self.top_k_input)
-        self.layout.addLayout(assist_layout)
+        self.top_k_input.setFixedWidth(70)
+
+        controls_layout.addWidget(topk_label)
+        controls_layout.addWidget(self.top_k_input)
+
+        # Adiciona o layout horizontal ao layout principal
+        self.layout.addLayout(controls_layout)
 
         self.tag_display = None
         self.proceed_button = None
@@ -92,7 +102,7 @@ class TaggingGridScreen(QWidget):
             self.layout.addWidget(error_box)
             return
 
-        tag_type_options = [("<Selecionar tipo de tag>", -1)] + [
+        tag_type_options = [("Exibir todos os sprites", -1)] + [
             (tt.name, tt.id) for tt in self.manager.get_all_tag_types()
         ]
         self.tag_type_dropdown.set_items(tag_type_options)
@@ -115,16 +125,12 @@ class TaggingGridScreen(QWidget):
         self.tag_display = None
         self.proceed_button = None
 
-        if tag_type_id == -1:
-            sprites = self.manager.get_all_sprites()
-            self._update_sprite_grid(sprites)
-            return
-
         tag_type = next((tt for tt in self.manager.get_all_tag_types() if tt.id == tag_type_id), None)
         if tag_type is None:
             return
 
         sprites = self.manager.get_unlabeled_sprites(tag_type_id)
+        print("Sprites size: " + str(len(sprites)))
         tags = self.manager.get_tags_by_tag_type(tag_type_id)
 
         self.tag_display = TagDisplay(
@@ -136,33 +142,40 @@ class TaggingGridScreen(QWidget):
 
         self.proceed_button = CustomButton("\U0001F4E4 Prosseguir", self._on_proceed)
         self.layout.addWidget(self.proceed_button)
-
         self._update_sprite_grid(sprites)
 
     def _on_filter_tag_selected(self):
+        tag_type_id = self.tag_type_dropdown.get_selected_id()
+        self.current_sprites = self.manager.get_unlabeled_sprites(tag_type_id)
+
         tag_id = self.filter_dropdown.get_selected_id()
         if tag_id == -1:
+            self._update_sprite_grid(self.current_sprites)
             return
 
-        sprites = self.manager.get_all_sprites()
         tag = self.manager.get_tag_by_id(tag_id)
         if not tag:
             return
 
-        filtered = [s for s in sprites if any(t.id == tag_id for t in tag.sprites)]
+        # IDs dos sprites já exibidos no grid
+        current_ids = {s.id for s in self.current_sprites}
+
+        # Sprites da tag selecionada
+        filtered = [s for s in tag.sprites if s.id in current_ids]
         self._update_sprite_grid(filtered)
 
     def _on_assist_tag_selected(self):
         tag_id = self.assist_dropdown.get_selected_id()
         tag_type_id = self.tag_type_dropdown.get_selected_id()
         if tag_id == -1 or tag_type_id == -1:
+            print("[Info] Nenhuma tag selecionada para curar")
             return
 
         tag = self.manager.get_tag_by_id(tag_id)
         if not tag:
             return
 
-        sprites = self.manager.get_unlabeled_sprites(tag_type_id)
+        sprites = self.current_sprites
         sprite_responses = [self.app_service.db.get_sprite_by_id(s.id) for s in sprites if s]
 
         top_k = self.top_k_input.value()
@@ -171,6 +184,7 @@ class TaggingGridScreen(QWidget):
         self._update_sprite_grid(curated)
 
     def _update_sprite_grid(self, sprites_dto):
+        self.current_sprites = sprites_dto
         sprite_widgets = [
             SelectableSprite(sprite_id=s.id, image_path=s.path, selection_callback=self.grid.on_selection_toggled)
             for s in sprites_dto
@@ -214,5 +228,6 @@ class TaggingGridScreen(QWidget):
             updated_tags = self.manager.get_tags_by_tag_type(tag_type_dto.id)
             self.tag_display.update_tags(updated_tags)
 
-    def load_sprites(self):
-        self._build()
+        all_tags_options = [("Nenhuma tag selecionada", -1)] + self.manager.get_tag_dropdown_options()
+        self.filter_dropdown.set_items(all_tags_options)
+        self.assist_dropdown.set_items(all_tags_options)

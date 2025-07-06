@@ -6,6 +6,7 @@ from database.db_service import DBService
 from services.map_service import MapService
 from services.sizer_service import SizerService
 from services.embedder_service import EmbedderService
+from utils.auto_sizer import AutoSizer
 
 
 class UpdateDatabaseManager:
@@ -14,6 +15,11 @@ class UpdateDatabaseManager:
         self.mapper = mapper
         self.sizer = sizer
         self.embedder = embedder
+        self.auto_sizer = True
+        self.auto_sizer_message: dict = {
+            True: "\033[93m[AUTO]\033[0m Auto sizer ligado! Sprites receberão tags de tamanho automaticamente.",
+            False: "\033[96m[INFO]\033[0m Auto sizer desligado, Sprites não receberão tags automáticas de tamanho"
+        }
 
     def update_sprites_from_directory(self, directory_path: str) -> List[str]:
         logs = []
@@ -35,5 +41,7 @@ class UpdateDatabaseManager:
                 logs.append(f"[SUCESSO] Sprite registrado com sucesso: {path}")
             except Exception as e:
                 logs.append(f"[ERRO] Falha ao processar '{path}': {str(e)}")
-
+        print(self.auto_sizer_message[self.auto_sizer])
+        if self.auto_sizer:
+            AutoSizer(self.db).auto_size()
         return logs
