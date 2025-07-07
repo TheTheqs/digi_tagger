@@ -72,3 +72,15 @@ class SpriteRepository:
     def remove_all_sprite_tags(self):
         self.session.query(SpriteTag).delete()
         print("[INFO] Todas as tags associadas aos sprites foram removidas.")
+
+    def remove_tag_from_sprite(self, sprite_id: int, tag_id: int):
+        association = (
+            self.session.query(SpriteTag)
+            .filter_by(sprite_id=sprite_id, tag_id=tag_id)
+            .first()
+        )
+        if association:
+            self.session.delete(association)
+            print(f"[INFO] Tag {tag_id} removida do sprite {sprite_id}.")
+        else:
+            print(f"[INFO] Associação não encontrada para sprite {sprite_id} e tag {tag_id}. Nenhuma remoção feita.")

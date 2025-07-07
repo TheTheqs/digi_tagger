@@ -72,6 +72,12 @@ class DBService:
             repo.remove_all_sprite_tags()
             session.commit()
 
+    def remove_tag_from_sprite(self, sprite_id: int, tag_id: int):
+        with SessionLocal() as session:
+            repo = SpriteRepository(session)
+            repo.remove_tag_from_sprite(sprite_id, tag_id)
+            session.commit()
+
     def delete_all_sprites(self):
         with SessionLocal() as session:
             repo = SpriteRepository(session)

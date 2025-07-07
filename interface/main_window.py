@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QMainWindow, QStackedWidget
 
 from interface.screens.confirm_sprites_screen import ConfirmSpritesScreen
 from interface.screens.home_screen import HomeScreen
+from interface.screens.review_screen import ReviewScreen
 from interface.screens.tagging_grid_screen import TaggingGridScreen
 from interface.screens.update_screen import UpdateDatabaseScreen
 from services.application_services import ApplicationService
@@ -21,11 +22,13 @@ class MainWindow(QMainWindow):
         self.home_screen = HomeScreen(self.navigate)
         self.update_screen = UpdateDatabaseScreen(self.navigate, self.app_service)
         self.tagging_screen = TaggingGridScreen(self.navigate, self.app_service, self.update_confirm_screen)
+        self.review_screen = ReviewScreen(self.navigate, self.app_service)
         self.confirm_screen = ConfirmSpritesScreen(self.navigate, self.app_service)
 
         self.stack.addWidget(self.home_screen)
         self.stack.addWidget(self.update_screen)
         self.stack.addWidget(self.tagging_screen)
+        self.stack.addWidget(self.review_screen)
         self.stack.addWidget(self.confirm_screen)
 
         # Home Screen
@@ -42,6 +45,9 @@ class MainWindow(QMainWindow):
         elif destiny == "tagging":
             self.tagging_screen.manager.load_all()
             self.stack.setCurrentWidget(self.tagging_screen)
+        elif destiny == "review":
+            self.review_screen.refresh()
+            self.stack.setCurrentWidget(self.review_screen)
         elif destiny == "confirm":
             self.stack.setCurrentWidget(self.confirm_screen)
 
