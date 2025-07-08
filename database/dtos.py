@@ -24,6 +24,7 @@ class TagRequestDTO:
 class SpriteResumeDTO:
     id: int
     path: str
+    size: int
 
 @dataclass
 class TagResponseDTO:

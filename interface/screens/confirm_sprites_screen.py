@@ -53,7 +53,7 @@ class ConfirmSpritesScreen(QWidget):
         Chamada pública para montar a tela com dados recebidos da tela anterior.
         `sprites` vem como lista de tuplas (id, path), então convertemos para DTO.
         """
-        dto_list = [SpriteResumeDTO(id=sid, path=path) for sid, path in sprites]
+        dto_list = [SpriteResumeDTO(id=sid, path=path, size=0) for sid, path in sprites]
         self.manager.set_context(tag_id, tag_name, dto_list)
 
         self.tag_info_label.setText(f"Tag selecionada: {tag_name}")

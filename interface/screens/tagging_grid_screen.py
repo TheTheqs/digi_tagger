@@ -12,6 +12,7 @@ from interface.components.tag_display import TagDisplay
 from interface.components.create_tag_popup import CreateTagPopup
 from interface.components.create_tag_type_popup import CreateTagTypePopup
 from interface.components.string_list_box import StringListBox
+from interface.components.tool_button import ToolButton
 from services.application_services import ApplicationService
 from interface.screens.managers.tagging_data_manager import TaggingDataManager
 
@@ -68,6 +69,9 @@ class TaggingGridScreen(QWidget):
 
         controls_layout.addWidget(topk_label)
         controls_layout.addWidget(self.top_k_input)
+        # tool button para sort
+        self.sort_button = ToolButton("🐔", "Ordenar sprites por tamanho", self.sort_sprites)
+        controls_layout.addWidget(self.sort_button)
 
         # Adiciona o layout horizontal ao layout principal
         self.layout.addLayout(controls_layout)
@@ -231,3 +235,10 @@ class TaggingGridScreen(QWidget):
         all_tags_options = [("Nenhuma tag selecionada", -1)] + self.manager.get_tag_dropdown_options()
         self.filter_dropdown.set_items(all_tags_options)
         self.assist_dropdown.set_items(all_tags_options)
+
+    def sort_sprites(self):
+        self._update_sprite_grid(self.manager.sort_sprites(self.current_sprites))
+
+    def refresh(self):
+        self.manager.load_all()
+        self._on_filter_tag_selected()

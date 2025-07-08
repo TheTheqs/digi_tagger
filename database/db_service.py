@@ -114,7 +114,7 @@ class DBService:
                     tag_type_id=tag.tag_type_id,
                     name=tag.name,
                     description=tag.description,
-                    sprites=[SpriteResumeDTO(id=s.id, path=s.path) for s in tag.sprites]
+                    sprites=[SpriteResumeDTO(id=s.id, path=s.path, size=s.size) for s in tag.sprites]
                 ) for tag in tags
             ]
 
@@ -128,7 +128,7 @@ class DBService:
                     tag_type_id=tag.tag_type_id,
                     name=tag.name,
                     description=tag.description,
-                    sprites=[SpriteResumeDTO(id=s.id, path=s.path) for s in tag.sprites]
+                    sprites=[SpriteResumeDTO(id=s.id, path=s.path, size=s.size) for s in tag.sprites]
                 ) for tag in tags
             ]
 
@@ -200,4 +200,4 @@ class DBService:
         )
 
     def _to_sprite_resume_dto(self, sprite: Sprite) -> SpriteResumeDTO:
-        return SpriteResumeDTO(id=sprite.id, path=sprite.path)
+        return SpriteResumeDTO(id=sprite.id, path=sprite.path, size=sprite.size)

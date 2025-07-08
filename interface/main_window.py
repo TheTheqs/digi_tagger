@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
         elif destiny == "data":
             print("Data Screen")
         elif destiny == "tagging":
-            self.tagging_screen.manager.load_all()
+            self.tagging_screen.refresh()
             self.stack.setCurrentWidget(self.tagging_screen)
         elif destiny == "review":
             self.review_screen.refresh()

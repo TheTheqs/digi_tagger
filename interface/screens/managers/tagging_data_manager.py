@@ -43,6 +43,9 @@ class TaggingDataManager:
                 return True
         return False
 
+    def sort_sprites(self, sprites: list[SpriteResumeDTO]) -> list[SpriteResumeDTO]:
+        return sorted(sprites, key= lambda s: s.size)
+
     # --- TagTypes ---
     def get_all_tag_types(self) -> list[TagTypeResponseDTO]:
         return self._tag_types
