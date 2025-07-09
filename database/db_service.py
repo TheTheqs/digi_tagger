@@ -55,6 +55,12 @@ class DBService:
             sprites = repo.get_all()
             return [self._to_sprite_resume_dto(s) for s in sprites]
 
+    def get_all_sprites_complete(self) -> List[SpriteResponseDTO]:
+        with SessionLocal() as session:
+            repo = SpriteRepository(session)
+            sprites = repo.get_all()
+            return [self._to_sprite_response_dto(s) for s in sprites]
+
     def get_sprite_id_by_paths(self, paths: List[str]) -> List[SpriteResumeDTO]:
         with SessionLocal() as session:
             repo = SpriteRepository(session)

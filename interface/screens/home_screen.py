@@ -12,7 +12,7 @@ class HomeScreen(QWidget):
         layout = QVBoxLayout()
 
         # Title
-        title = Title("Welcome to DigiScrap!")
+        title = Title("Bem-vindo ao DigiTagger!")
         layout.addWidget(title)
 
         # Buttons
@@ -22,6 +22,8 @@ class HomeScreen(QWidget):
         layout.addWidget(btn_tagging)
         btn_review = CustomButton("🎨 Revisar Tags", lambda: self.navi("review"))
         layout.addWidget(btn_review)
+        btn_export = CustomButton("🚀 Exportar Dataset", lambda: self.navi("export"))
+        layout.addWidget(btn_export)
         btn_analyse = CustomButton("📊 Análise de Dados", lambda: self.navi("data"))
         layout.addWidget(btn_analyse)
 
